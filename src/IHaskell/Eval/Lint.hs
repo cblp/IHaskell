@@ -9,7 +9,6 @@ import ClassyPrelude hiding (last)
 import Control.Monad
 import Data.List (findIndex)
 import Text.Printf
-import Data.String.Here
 import Data.Char
 import Data.Monoid
 import Data.Maybe (mapMaybe)
@@ -66,7 +65,7 @@ lint blocks = do
 
   -- create 'suggestions'
   let modules = mapMaybe (createModule mode) blocks
-      ideas = applyHints classify hint (map (\m->(m,[])) modules)
+      ideas = applyHints classify hint modules
       suggestions = mapMaybe showIdea ideas
 
   return $ Display $
@@ -188,16 +187,16 @@ htmlSuggestions = concatMap toHtml
           _ -> "warning"
 
     style :: String -> String -> String
-    style cls thing = [i| <div class="suggestion-${cls}">${thing}</div> |]
+    style cls thing = concat ["<div class=\"suggestion-", cls, "\">", thing, "</div>"]
 
     named :: String -> String
-    named thing = [i| <div class="suggestion-name" style="clear:both;">${thing}</div> |]
+    named thing = concat ["<div class=\"suggestion-name\" style=\"clear:both;\">", thing, "</div>"]
 
     styleId :: String -> String -> String -> String
-    styleId cls id thing = [i| <div class="${cls}" id="${id}">${thing}</div> |]
+    styleId cls id thing = concat ["<div class=\"", cls, "\" id=\"", id, "\">", thing, "</div>"]
     
     floating :: String -> String -> String
-    floating dir thing = [i| <div class="suggestion-row" style="float: ${dir};">${thing}</div> |]
+    floating dir thing = concat ["<div class=\"suggestion-row\" style=\"float: ", dir, ";\">", thing, "</div>"]
 
 
 showSuggestion :: String -> String

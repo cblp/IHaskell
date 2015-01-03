@@ -15,7 +15,6 @@ import qualified Shelly
 import Control.Applicative ((<$>))
 import Filesystem.Path.CurrentOS (encodeString)
 import System.SetEnv (setEnv)
-import Data.String.Here
 import Data.String.Utils (strip, replace)
 import Data.Monoid
 
@@ -289,43 +288,38 @@ evalTests = do
       "3" `becomes` ["3"]
       "3+5" `becomes` ["8"]
       "print 3" `becomes` ["3"]
-      [hereLit|
-        let x = 11
-            z = 10 in
-          x+z
-      |] `becomes` ["21"]
+      " let x = 11      \n\
+            z = 10 in   \n\
+          x+z           \n\
+      " `becomes` ["21"]
 
     it "evaluates multiline expressions" $  do
-      [hereLit|
-        import Control.Monad
-        forM_ [1, 2, 3] $ \x ->
-          print x
-      |] `becomes` ["1\n2\n3"]
+      " import Control.Monad            \n\
+        forM_ [1, 2, 3] $ \\x ->        \n\
+          print x                       \n\
+      " `becomes` ["1\n2\n3"]
 
     it "evaluates function declarations silently" $ do
-      [hereLit|
-        fun :: [Int] -> Int
-        fun [] = 3
-        fun (x:xs) = 10
-        fun [1, 2]
-      |] `becomes` ["10"]
+      " fun :: [Int] -> Int     \n\
+        fun [] = 3              \n\
+        fun (x:xs) = 10         \n\
+        fun [1, 2]              \n\
+      " `becomes` ["10"]
 
     it "evaluates data declarations" $ do
-      [hereLit|
-        data X = Y Int
-               | Z String
-               deriving (Show, Eq)
-        print [Y 3, Z "No"]
-        print (Y 3 == Z "No")
-      |] `becomes` ["[Y 3,Z \"No\"]", "False"]
+      " data X = Y Int                  \n\
+               | Z String               \n\
+               deriving (Show, Eq)      \n\
+        print [Y 3, Z \"No\"]           \n\
+        print (Y 3 == Z \"No\")         \n\
+      " `becomes` ["[Y 3,Z \"No\"]", "False"]
 
     it "evaluates do blocks in expressions" $ do
-      [hereLit|
-        show (show (do
-            Just 10
-            Nothing
-            Just 100))
-      |] `becomes` ["\"\\\"Nothing\\\"\""]
+      " show (show (do  \n\
+            Just 10     \n\
+            Nothing     \n\
+            Just 100))  \n\
+      " `becomes` ["\"\\\"Nothing\\\"\""]
 
     it "is silent for imports" $ do
       "import Control.Monad" `becomes` []
@@ -357,14 +351,13 @@ layoutChunkerTests = describe "Layout Chunk" $ do
     map unloc (layoutChunks "a\n\nstring") `shouldBe` ["a","string"]
 
   it "parses multiple exprs" $ do
-    let text = [hereLit|
-                 first
-
-                 second
-                 third
-
-                 fourth
-               |]
+    let text = " first          \n\
+                                \n\
+                 second         \n\
+                 third          \n\
+                                \n\
+                 fourth         \n\
+               "
     layoutChunks text `shouldBe`
       [Located 2 "first",
        Located 4 "second",
@@ -517,31 +510,28 @@ parseStringTests = describe "Parser" $ do
         Expression "print 3"
       ]
   it "ignores blank lines properly" $
-    [hereLit|
-      test arg = hello
-        where
-          x = y
-
-          z = w
-    |] `is` Declaration
+    " test arg = hello  \n\
+        where           \n\
+          x = y         \n\
+                        \n\
+          z = w         \n\
+    " `is` Declaration
   it "doesn't break on long strings" $ do
     let longString = concat $ replicate 20 "hello "
     ("img ! src \"" ++ longString ++ "\" ! width \"500\"") `is` Expression
 
   it "parses do blocks in expression" $ do
-    [hereLit|
-      show (show (do
-        Just 10
-        Nothing
-        Just 100))
-    |] `is` Expression
+    " show (show (do    \n\
+        Just 10         \n\
+        Nothing         \n\
+        Just 100))      \n\
+    " `is` Expression
   it "correctly locates parsed items" $ do
     let go = doGhc . parseString
-    go [hereLit|
-        first
-
-        second
-       |] >>= (`shouldBe` [Located 2 (Expression "first"),
+    go "first   \n\
+                \n\
+        second  \n\
+       " >>= (`shouldBe` [Located 2 (Expression "first"),
                           Located 4 (Expression "second")])
 
 
